@@ -42,6 +42,13 @@ OPENAPI_ARRAY_ITEM_MAP = {
 }
 
 
+def get_array_item_type(array_type: type) -> type:
+    item_type = None
+    if isinstance(array_type, _GenericAlias):
+        item_type = array_type.__args__[0]
+    return item_type
+
+
 def _is_optional_type(field):
     return (get_origin(field) is Union and
            type(None) in get_args(field))
@@ -58,9 +65,7 @@ def get_openapi_array_schema(array_type: type) -> dict:
     Returns:
         dict: openapi schema of an array
     '''
-    item_type = None
-    if isinstance(array_type, _GenericAlias):
-        item_type = array_type.__args__[0]
+    item_type = get_array_item_type(array_type)
 
     if item_type is None or isinstance(item_type, TypeVar):
         return {
