@@ -1,7 +1,8 @@
 from typing import List, Optional
 
 from .path import OpenApiPath
-from .schema import get_openapi_schema, get_openapi_type
+from .schema import (get_array_item_type, get_openapi_array_schema,
+                     get_openapi_schema, get_openapi_type)
 from .security import OpenApiSecurity
 
 
@@ -69,6 +70,11 @@ class OpenApi():
                 if get_openapi_type(resp.data_type) == 'object':
                     openapi_dict['components']['schemas'].update(
                         get_openapi_schema(resp.data_type, reference=False)
+                    )
+                elif get_openapi_type(resp.data_type) == 'array':
+                    openapi_dict['components']['schemas'].update(
+                        get_openapi_schema(
+                            get_array_item_type(resp.data_type), reference=False)
                     )
             if self.security:
                 openapi_dict['security'] = self.security.get_security_reference()
