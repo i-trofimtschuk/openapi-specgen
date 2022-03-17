@@ -3,7 +3,8 @@ https://swagger.io/docs/specification/data-models/
 '''
 import dataclasses
 from datetime import date, datetime
-from typing import List, TypeVar, _GenericAlias
+from typing import (List, Optional, TypeVar, Union, _GenericAlias, get_args,
+                    get_origin, get_type_hints)
 
 import marshmallow
 
@@ -73,7 +74,7 @@ def get_openapi_schema(data_type: type, reference=True) -> dict:
     '''
     openapi_type = get_openapi_type(data_type)
     if openapi_type == 'object':
-        if issubclass(data_type, marshmallow.Schema):
+        if type(data_type) == type and issubclass(data_type, marshmallow.Schema):
             return get_openapi_schema_from_mashmallow_schema(data_type, reference=reference)
         if reference:
             return {'$ref': f'#/components/schemas/{data_type.__name__}'}
@@ -100,13 +101,16 @@ def get_openapi_schema_from_dataclass(data_type: type) -> dict:
     Returns:
         dict: A dict representing this dataclass as a openapi schema
     '''
+    resolved_hints = get_type_hints(data_type)
+    name_type_map = {field.name: resolved_hints[field.name]
+                     for field in dataclasses.fields(data_type)}
     openapi_schema = {
         data_type.__name__: {
             'title': data_type.__name__,
             'required': [field.name for field in dataclasses.fields(data_type)],
             'type': 'object',
             'properties': {
-                field.name: get_openapi_schema(field.type) for field in dataclasses.fields(data_type)
+                name: get_openapi_schema(field_type) for name, field_type in name_type_map.items()
             }
         }
     }
