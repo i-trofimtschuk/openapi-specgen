@@ -18,11 +18,19 @@ OPENAPI_TYPE_MAP = {
     int: "integer",
     bool: "boolean",
     list: "array",
+    Optional[str]: "string",
+    Optional[date]: "string",
+    Optional[datetime]: "string",
+    Optional[float]: "number",
+    Optional[int]: "integer",
+    Optional[bool]: "boolean",
 }
 
 OPENAPI_FORMAT_MAP = {
     date: "date",
     datetime: "date-time",
+    Optional[date]: "date",
+    Optional[datetime]: "date-time",
 }
 
 OPENAPI_ARRAY_ITEM_MAP = {
@@ -32,6 +40,11 @@ OPENAPI_ARRAY_ITEM_MAP = {
     List[bool]: "boolean",
     List: None
 }
+
+
+def _is_optional_type(field):
+    return (get_origin(field) is Union and
+           type(None) in get_args(field))
 
 
 def get_openapi_array_schema(array_type: type) -> dict:
@@ -93,8 +106,6 @@ def get_openapi_schema(data_type: type, reference=True) -> dict:
 def get_openapi_schema_from_dataclass(data_type: type) -> dict:
     '''Returns a dict representing the openapi schema of the dataclass data_type.
 
-    Assumes all fields declared by this dataclass are required.
-
     Args:
         data_type (type): Any dataclass
 
@@ -107,7 +118,8 @@ def get_openapi_schema_from_dataclass(data_type: type) -> dict:
     openapi_schema = {
         data_type.__name__: {
             'title': data_type.__name__,
-            'required': [field.name for field in dataclasses.fields(data_type)],
+            'required': [field.name for field in dataclasses.fields(data_type)
+                         if not _is_optional_type(resolved_hints[field.name])],
             'type': 'object',
             'properties': {
                 name: get_openapi_schema(field_type) for name, field_type in name_type_map.items()
