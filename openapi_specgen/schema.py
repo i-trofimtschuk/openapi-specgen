@@ -44,7 +44,7 @@ OPENAPI_ARRAY_ITEM_MAP = {
 
 def _is_optional_type(field):
     return (get_origin(field) is Union and
-           type(None) in get_args(field))
+            type(None) in get_args(field))
 
 
 def get_openapi_array_schema(array_type: type) -> dict:
